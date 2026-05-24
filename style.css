@@ -1,0 +1,313 @@
+:root {
+  --bg: #050608;
+  --panel: rgba(16, 18, 24, 0.82);
+  --panel-strong: rgba(22, 25, 34, 0.92);
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #eef4ff;
+  --muted: #8e98aa;
+  --green: #35f2a0;
+  --red: #ff4f68;
+  --blue: #50a7ff;
+  --violet: #8b5cf6;
+  --amber: #ffbf69;
+}
+
+html, body, [data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(circle at 20% -10%, rgba(80, 167, 255, 0.10), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(139, 92, 246, 0.10), transparent 30%),
+    linear-gradient(145deg, #030406 0%, #080a0f 45%, #050608 100%);
+  color: var(--text);
+}
+
+[data-testid="stHeader"], [data-testid="stToolbar"] {
+  background: transparent;
+}
+
+[data-testid="stSidebar"] {
+  background: rgba(7, 8, 12, 0.86);
+  border-right: 1px solid var(--line);
+}
+
+.block-container {
+  max-width: 100%;
+  padding: 1.1rem 1.4rem 2.6rem;
+}
+
+h1, h2, h3, p, span, label, div {
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+.hero-shell {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(18, 21, 30, 0.90), rgba(8, 10, 15, 0.76));
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px);
+  margin-bottom: 14px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand-title {
+  font-size: clamp(26px, 2.4vw, 44px);
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.status-pill {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 17px;
+}
+
+.macro-card,
+.metric-panel,
+.alert-card,
+.btc-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 38px rgba(0,0,0,0.26);
+  backdrop-filter: blur(16px);
+}
+
+.macro-card {
+  padding: 13px 14px;
+  min-height: 86px;
+}
+
+.macro-label,
+.card-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.macro-value {
+  font-size: 20px;
+  font-weight: 760;
+  margin-top: 8px;
+}
+
+.macro-change {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.neutral { color: var(--muted); }
+.blue { color: var(--blue); }
+.amber { color: var(--amber); }
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 13px;
+  margin-top: 12px;
+}
+
+.asset-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  padding: 15px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
+    rgba(13, 15, 21, 0.86);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.25);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  min-height: 232px;
+}
+
+.asset-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(80, 167, 255, 0.30);
+  box-shadow: 0 22px 70px rgba(0,0,0,0.36);
+}
+
+.asset-card.hot {
+  animation: premiumPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes premiumPulse {
+  0%, 100% { box-shadow: 0 18px 50px rgba(0,0,0,0.25); }
+  50% { box-shadow: 0 18px 64px rgba(53, 242, 160, 0.14), 0 0 0 1px rgba(53, 242, 160, 0.18); }
+}
+
+.asset-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ticker {
+  font-size: 23px;
+  font-weight: 850;
+}
+
+.company {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trend-badge {
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.045);
+  white-space: nowrap;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.price {
+  font-size: 30px;
+  font-weight: 820;
+}
+
+.change {
+  text-align: right;
+  font-weight: 760;
+}
+
+.sparkline {
+  width: 100%;
+  height: 50px;
+  margin: 10px 0 8px;
+  opacity: 0.96;
+}
+
+.card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  border-radius: 10px;
+  padding: 9px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.stat strong {
+  display: block;
+  color: var(--text);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 22px 0 10px;
+}
+
+.section-title h2 {
+  font-size: 21px;
+  margin: 0;
+}
+
+.metric-panel,
+.btc-panel {
+  padding: 15px;
+}
+
+.mood-score {
+  font-size: 44px;
+  font-weight: 860;
+  line-height: 1;
+}
+
+.alert-card {
+  padding: 12px 13px;
+  margin-bottom: 9px;
+}
+
+.alert-title {
+  font-weight: 760;
+  font-size: 14px;
+}
+
+.alert-copy {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.small-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+div[data-testid="stMetric"] {
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+div[data-testid="stMetric"] label {
+  color: var(--muted) !important;
+}
+
+div[data-testid="stSelectbox"],
+div[data-testid="stMultiSelect"] {
+  color: var(--text);
+}
+
+@media (max-width: 1300px) {
+  .macro-grid { grid-template-columns: repeat(4, minmax(130px, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .block-container { padding: .8rem .8rem 2rem; }
+  .macro-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+  .asset-grid { grid-template-columns: 1fr; }
+  .price { font-size: 25px; }
+}
