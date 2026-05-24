@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import math
-import os
 from dataclasses import dataclass
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
@@ -48,8 +47,8 @@ MACRO = {
     "^IXIC": "Nasdaq",
     "^VIX": "VIX",
     "BTC-USD": "Bitcoin",
-    "DX-Y.NYB": "Dólar DXY",
-    "AUDUSD=X": "AUD/USD",
+    "AUDBRL=X": "AUD/BRL",
+    "BRL=X": "USD/BRL",
     "TIO=F": "Minério",
     "CL=F": "Petróleo",
 }
@@ -325,19 +324,19 @@ def sparkline_svg(values: list[float], positive: bool) -> str:
         y = height - pad - ((value - low) / spread) * (height - pad * 2)
         points.append(f"{x:.1f},{y:.1f}")
     color = "#35f2a0" if positive else "#ff4f68"
-    gradient_id = "g" + base64.urlsafe_b64encode(os.urandom(4)).decode("ascii")
-    return f"""
-    <svg class="sparkline" viewBox="0 0 {width} {height}" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="{gradient_id}" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="{color}" stop-opacity=".32"/>
-          <stop offset="100%" stop-color="{color}" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <polyline fill="none" stroke="{color}" stroke-width="2.6" points="{' '.join(points)}"/>
-      <polygon fill="url(#{gradient_id})" points="{points[0]} {' '.join(points)} {points[-1].split(',')[0]},{height} {points[0].split(',')[0]},{height}"/>
-    </svg>
-    """
+    fill_points = f"{points[0]} {' '.join(points)} {points[-1].split(',')[0]},{height} {points[0].split(',')[0]},{height}"
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" preserveAspectRatio="none">'
+        f'<defs><linearGradient id="spark" x1="0" x2="0" y1="0" y2="1">'
+        f'<stop offset="0%" stop-color="{color}" stop-opacity=".32"/>'
+        f'<stop offset="100%" stop-color="{color}" stop-opacity="0"/>'
+        f'</linearGradient></defs>'
+        f'<polygon fill="url(#spark)" points="{fill_points}"/>'
+        f'<polyline fill="none" stroke="{color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" points="{" ".join(points)}"/>'
+        f'</svg>'
+    )
+    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f'<img class="sparkline" alt="Mini gráfico intraday" src="data:image/svg+xml;base64,{encoded}">'
 
 
 def asset_card(row: dict) -> str:
@@ -349,65 +348,44 @@ def asset_card(row: dict) -> str:
     trend_class = "positive" if trend == "bullish" else "negative" if trend == "bearish" else "neutral"
     currency = row.get("currency", "$")
     spark = sparkline_svg(row.get("series", []), positive)
-    return f"""
-    <div class="asset-card {hot}">
-      <div class="asset-head">
-        <div>
-          <div class="ticker">{row['ticker']}</div>
-          <div class="company">{row['name']}</div>
-        </div>
-        <div class="trend-badge {trend_class}">{trend.upper()}</div>
-      </div>
-      <div class="price-row">
-        <div class="price">{fmt_price(row.get('price'), currency)}</div>
-        <div class="change {color_class}">
-          {pct:+.2f}%<br>
-          <span style="font-size:12px">{row.get('nominal_change', 0):+.2f}</span>
-        </div>
-      </div>
-      {spark}
-      <div class="card-stats">
-        <div class="stat"><span class="card-label">Volume</span><strong>{fmt_number(row.get('volume'))}</strong></div>
-        <div class="stat"><span class="card-label">M. Cap</span><strong>{fmt_number(row.get('market_cap'))}</strong></div>
-        <div class="stat"><span class="card-label">RSI</span><strong>{'--' if pd.isna(row.get('rsi')) else f"{row.get('rsi'):.1f}"}</strong></div>
-      </div>
-    </div>
-    """
+    rsi = "--" if pd.isna(row.get("rsi")) else f"{row.get('rsi'):.1f}"
+    return (
+        f'<div class="asset-card {hot}">'
+        f'<div class="asset-head"><div><div class="ticker">{row["ticker"]}</div><div class="company">{row["name"]}</div></div>'
+        f'<div class="trend-badge {trend_class}">{trend.upper()}</div></div>'
+        f'<div class="price-row"><div class="price">{fmt_price(row.get("price"), currency)}</div>'
+        f'<div class="change {color_class}">{pct:+.2f}%<br><span style="font-size:12px">{row.get("nominal_change", 0):+.2f}</span></div></div>'
+        f'{spark}'
+        f'<div class="card-stats">'
+        f'<div class="stat"><span class="card-label">Volume</span><strong>{fmt_number(row.get("volume"))}</strong></div>'
+        f'<div class="stat"><span class="card-label">M. Cap</span><strong>{fmt_number(row.get("market_cap"))}</strong></div>'
+        f'<div class="stat"><span class="card-label">RSI</span><strong>{rsi}</strong></div>'
+        f'</div></div>'
+    )
 
 
 def render_header(status: MarketStatus, macro: dict) -> None:
     now = datetime.now(LOCAL_TZ).strftime("%H:%M:%S Brisbane")
-    st.markdown(
-        f"""
-        <div class="hero-shell">
-          <div class="topbar">
-            <div>
-              <h1 class="brand-title">{APP_TITLE}</h1>
-              <div class="brand-subtitle">AI stocks, Bitcoin, ETFs, Brasil e macro em uma segunda tela.</div>
-            </div>
-            <div class="status-pill">Mercado: <b>{status.label}</b> · {status.detail} · {now}</div>
-          </div>
-          <div class="macro-grid">
-            {''.join(macro_card(ticker, label, macro.get(ticker, {})) for ticker, label in MACRO.items())}
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    cards = "".join(macro_card(ticker, label, macro.get(ticker, {})) for ticker, label in MACRO.items())
+    html = (
+        '<div class="hero-shell">'
+        '<div class="topbar">'
+        f'<div><h1 class="brand-title">{APP_TITLE}</h1>'
+        '<div class="brand-subtitle">AI stocks, Bitcoin, ETFs, Brasil e macro em uma segunda tela.</div></div>'
+        f'<div class="status-pill">Mercado: <b>{status.label}</b> · {status.detail} · {now}</div>'
+        '</div>'
+        f'<div class="macro-grid">{cards}</div>'
+        '</div>'
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def macro_card(ticker: str, label: str, row: dict) -> str:
     pct = row.get("pct_change", 0) or 0
     klass = "positive" if pct >= 0 else "negative"
-    currency = "" if ticker.startswith("^") or ticker in {"DX-Y.NYB", "AUDUSD=X"} else "$"
+    currency = "R$" if ticker in {"AUDBRL=X", "BRL=X"} else "" if ticker.startswith("^") else "$"
     value = fmt_price(row.get("price"), currency).replace("$", "", 1) if currency == "" else fmt_price(row.get("price"), currency)
-    return f"""
-      <div class="macro-card">
-        <div class="macro-label">{label}</div>
-        <div class="macro-value">{value}</div>
-        <div class="macro-change {klass}">{pct:+.2f}%</div>
-      </div>
-    """
+    return f'<div class="macro-card"><div class="macro-label">{label}</div><div class="macro-value">{value}</div><div class="macro-change {klass}">{pct:+.2f}%</div></div>'
 
 
 def market_mood(rows: list[dict], macro: dict) -> tuple[int, str, list[str]]:
@@ -455,7 +433,6 @@ def render_btc_center(rows: list[dict], extras: dict) -> None:
     support = close.tail(120).quantile(0.18) if len(close) else np.nan
     resistance = close.tail(120).quantile(0.86) if len(close) else np.nan
 
-    st.markdown('<div class="btc-panel">', unsafe_allow_html=True)
     cols = st.columns(6)
     cols[0].metric("BTC/USD", fmt_price(btc.get("price"), "$"), f"{btc.get('pct_change', 0):+.2f}%")
     cols[1].metric("BTC/BRL", fmt_price(btc_brl.get("price"), "R$"), f"{btc_brl.get('pct_change', 0):+.2f}%")
@@ -465,7 +442,6 @@ def render_btc_center(rows: list[dict], extras: dict) -> None:
     cols[5].metric("Fluxo ETF", extras.get("etf_flow_proxy") or "--")
     st.caption(f"Suporte técnico: {fmt_price(support, '$')} · Resistência: {fmt_price(resistance, '$')}")
     st.plotly_chart(price_chart("BTC-USD", "5d", "15m"), use_container_width=True, config={"displayModeBar": False})
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def price_chart(ticker: str, period: str, interval: str) -> go.Figure:

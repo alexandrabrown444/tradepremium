@@ -3,8 +3,8 @@
   --panel: rgba(16, 18, 24, 0.82);
   --panel-strong: rgba(22, 25, 34, 0.92);
   --line: rgba(255, 255, 255, 0.08);
-  --text: #eef4ff;
-  --muted: #8e98aa;
+  --text: #ffffff;
+  --muted: #c7d2e5;
   --green: #35f2a0;
   --red: #ff4f68;
   --blue: #50a7ff;
@@ -37,6 +37,29 @@ html, body, [data-testid="stAppViewContainer"] {
 h1, h2, h3, p, span, label, div {
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
   letter-spacing: 0;
+  color: inherit;
+}
+
+[data-testid="stAppViewContainer"],
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] *,
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stCaptionContainer"],
+[data-testid="stWidgetLabel"],
+.stRadio label,
+.stSelectbox label,
+.stMultiSelect label {
+  color: var(--text) !important;
+}
+
+[data-testid="stCaptionContainer"],
+.small-note,
+.brand-subtitle,
+.company,
+.alert-copy {
+  color: var(--muted) !important;
 }
 
 .hero-shell {
@@ -112,6 +135,7 @@ h1, h2, h3, p, span, label, div {
 }
 
 .macro-value {
+  color: var(--text);
   font-size: 20px;
   font-weight: 760;
   margin-top: 8px;
@@ -172,6 +196,7 @@ h1, h2, h3, p, span, label, div {
 }
 
 .ticker {
+  color: var(--text);
   font-size: 23px;
   font-weight: 850;
 }
@@ -204,6 +229,7 @@ h1, h2, h3, p, span, label, div {
 }
 
 .price {
+  color: var(--text);
   font-size: 30px;
   font-weight: 820;
 }
@@ -218,6 +244,9 @@ h1, h2, h3, p, span, label, div {
   height: 50px;
   margin: 10px 0 8px;
   opacity: 0.96;
+  display: block;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.025);
 }
 
 .card-stats {
