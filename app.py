@@ -25,21 +25,31 @@ LOCAL_TZ = ZoneInfo("Australia/Brisbane")
 NY_TZ = ZoneInfo("America/New_York")
 
 ASSETS = {
-    "APP": {"name": "AppLovin", "category": "AI / Tech"},
-    "IONQ": {"name": "IonQ", "category": "Quantum"},
-    "AMD": {"name": "Advanced Micro Devices", "category": "Semiconductors"},
-    "NVDA": {"name": "NVIDIA", "category": "Semiconductors"},
-    "ASML": {"name": "ASML Holding", "category": "Semiconductors"},
-    "TSM": {"name": "Taiwan Semiconductor", "category": "Semiconductors"},
-    "NVTS": {"name": "Navitas Semiconductor", "category": "Semiconductors"},
-    "USAR": {"name": "USA Rare Earth", "category": "AI / Tech"},
-    "MU": {"name": "Micron Technology", "category": "Semiconductors"},
-    "AVGO": {"name": "Broadcom", "category": "Semiconductors"},
-    "IBIT": {"name": "iShares Bitcoin Trust", "category": "ETFs"},
+    "NVDA": {"name": "NVIDIA", "category": "Core AI"},
+    "AVGO": {"name": "Broadcom", "category": "Core AI"},
+    "TSM": {"name": "Taiwan Semiconductor", "category": "Core AI"},
+    "AMD": {"name": "Advanced Micro Devices", "category": "Core AI"},
+    "ASML": {"name": "ASML Holding", "category": "AI Infrastructure"},
+    "AMAT": {"name": "Applied Materials", "category": "AI Infrastructure"},
+    "LRCX": {"name": "Lam Research", "category": "AI Infrastructure"},
+    "MU": {"name": "Micron Technology", "category": "AI Infrastructure"},
+    "SNPS": {"name": "Synopsys", "category": "AI Infrastructure"},
+    "CDNS": {"name": "Cadence Design Systems", "category": "AI Infrastructure"},
+    "APP": {"name": "AppLovin", "category": "Asymmetric AI"},
+    "IONQ": {"name": "IonQ", "category": "Asymmetric AI"},
+    "CBRS": {"name": "Cerebras Systems", "category": "Asymmetric AI"},
+    "NVTS": {"name": "Navitas Semiconductor", "category": "Asymmetric AI"},
+    "VST": {"name": "Vistra", "category": "Energy / Nuclear"},
+    "LEU": {"name": "Centrus Energy", "category": "Energy / Nuclear"},
+    "RKLB": {"name": "Rocket Lab", "category": "Defense / Space"},
+    "KTOS": {"name": "Kratos Defense & Security", "category": "Defense / Space"},
+    "IBIT": {"name": "iShares Bitcoin Trust", "category": "Crypto"},
+    "IREN": {"name": "IREN", "category": "Crypto"},
+    "BTC-USD": {"name": "Bitcoin", "category": "Crypto"},
+    "USAR": {"name": "USA Rare Earth", "category": "Strategic Materials"},
     "QQQ": {"name": "Invesco QQQ Trust", "category": "ETFs"},
     "PRIO3.SA": {"name": "PRIO", "category": "Brasil"},
     "VALE3.SA": {"name": "Vale", "category": "Brasil"},
-    "BTC-USD": {"name": "Bitcoin", "category": "Cripto"},
 }
 
 MACRO = {
@@ -415,7 +425,8 @@ def macro_card(ticker: str, label: str, row: dict) -> str:
 
 def market_mood(rows: list[dict], macro: dict) -> tuple[int, str, list[str]]:
     lookup = {row["ticker"]: row for row in rows}
-    semis = [lookup[t]["pct_change"] for t in ["AMD", "NVDA", "ASML", "TSM", "MU", "AVGO"] if t in lookup]
+    ai_complex = ["NVDA", "AVGO", "TSM", "AMD", "ASML", "AMAT", "LRCX", "MU", "SNPS", "CDNS", "APP", "IONQ", "CBRS", "NVTS"]
+    semis = [lookup[t]["pct_change"] for t in ai_complex if t in lookup]
     semis_score = np.nanmean(semis) if semis else 0
     nasdaq = macro.get("^IXIC", {}).get("pct_change", 0) or 0
     btc = lookup.get("BTC-USD", {}).get("pct_change", 0) or 0
@@ -426,7 +437,7 @@ def market_mood(rows: list[dict], macro: dict) -> tuple[int, str, list[str]]:
     score = int(np.clip(raw, 0, 100))
     label = "Bullish" if score >= 62 else "Bearish" if score <= 42 else "Neutro"
     reasons = [
-        f"Semis: {semis_score:+.2f}%",
+        f"AI complex: {semis_score:+.2f}%",
         f"Nasdaq: {nasdaq:+.2f}%",
         f"Bitcoin: {btc:+.2f}%",
         f"VIX: {vix:+.2f}%",
@@ -513,7 +524,7 @@ def style_figure(fig: go.Figure) -> go.Figure:
 def sidebar_controls() -> tuple[list[str], str, str]:
     st.sidebar.title("Command Center")
     st.sidebar.caption("Filtros e janelas de análise")
-    categories = ["AI / Tech", "Semiconductors", "Quantum", "ETFs", "Brasil", "Cripto"]
+    categories = list(dict.fromkeys(meta["category"] for meta in ASSETS.values()))
     selected_categories = st.sidebar.multiselect("Categorias", categories, default=categories)
     visible = [ticker for ticker, meta in ASSETS.items() if meta["category"] in selected_categories]
     selected_ticker = st.sidebar.selectbox("Ativo para gráfico avançado", visible or list(ASSETS), index=0)
