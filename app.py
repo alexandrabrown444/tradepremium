@@ -128,9 +128,15 @@ def fetch_fast_info(ticker: str) -> dict:
         return {
             "market_cap": getattr(info, "market_cap", None) or info.get("marketCap"),
             "currency": getattr(info, "currency", None) or info.get("currency", "USD"),
+            "last_price": getattr(info, "last_price", None) or info.get("lastPrice"),
+            "previous_close": getattr(info, "regular_market_previous_close", None)
+            or info.get("regularMarketPreviousClose")
+            or getattr(info, "previous_close", None)
+            or info.get("previousClose"),
+            "last_volume": getattr(info, "last_volume", None) or info.get("lastVolume"),
         }
     except Exception:
-        return {"market_cap": None, "currency": "USD"}
+        return {"market_cap": None, "currency": "USD", "last_price": None, "previous_close": None, "last_volume": None}
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -141,7 +147,7 @@ def fetch_macro_snapshot() -> dict:
             hist = fetch_history(ticker, "5d", "1d")
         else:
             hist = fetch_history(ticker, "5d", "15m")
-        rows[ticker] = build_quote(ticker, label, "Macro", hist)
+        rows[ticker] = build_quote(ticker, label, "Macro", hist, fetch_fast_info(ticker))
     return rows
 
 
@@ -152,7 +158,7 @@ def fetch_asset_rows(tickers: tuple[str, ...]) -> list[dict]:
         meta = ASSETS[ticker]
         hist = fetch_history(ticker, "5d", "5m")
         info = fetch_fast_info(ticker)
-        row = build_quote(ticker, meta["name"], meta["category"], hist)
+        row = build_quote(ticker, meta["name"], meta["category"], hist, info)
         row["market_cap"] = info.get("market_cap")
         row["currency"] = "R$" if ticker.endswith(".SA") else "$"
         row["rsi"] = latest_rsi(hist)
@@ -201,26 +207,30 @@ def fetch_bitcoin_extras() -> dict:
     return extras
 
 
-def build_quote(ticker: str, name: str, category: str, hist: pd.DataFrame) -> dict:
+def build_quote(ticker: str, name: str, category: str, hist: pd.DataFrame, info: dict | None = None) -> dict:
+    info = info or {}
     if hist.empty or "Close" not in hist:
+        price = coalesce(info.get("last_price"), np.nan)
+        previous_close = coalesce(info.get("previous_close"), price)
+        nominal = price - previous_close if previous_close else 0.0
+        pct = nominal / previous_close * 100 if previous_close else 0.0
         return {
             "ticker": ticker,
             "name": name,
             "category": category,
-            "price": np.nan,
-            "pct_change": 0.0,
-            "nominal_change": 0.0,
-            "volume": np.nan,
+            "price": price,
+            "pct_change": pct,
+            "nominal_change": nominal,
+            "volume": coalesce(info.get("last_volume"), np.nan),
             "series": [],
         }
 
     close = hist["Close"].dropna()
-    price = float(close.iloc[-1]) if len(close) else np.nan
-    baseline = float(close.iloc[0]) if len(close) else price
-    if "Open" in hist and not hist["Open"].dropna().empty:
-        baseline = float(hist["Open"].dropna().iloc[0])
-    nominal = price - baseline if baseline else 0.0
-    pct = (nominal / baseline * 100) if baseline else 0.0
+    price = coalesce(info.get("last_price"), float(close.iloc[-1]) if len(close) else np.nan)
+    previous_close = coalesce(info.get("previous_close"), fallback_previous_close(close))
+    nominal = price - previous_close if previous_close else 0.0
+    pct = (nominal / previous_close * 100) if previous_close else 0.0
+    fallback_volume = float(hist["Volume"].dropna().iloc[-1]) if "Volume" in hist and not hist["Volume"].dropna().empty else np.nan
 
     return {
         "ticker": ticker,
@@ -229,9 +239,24 @@ def build_quote(ticker: str, name: str, category: str, hist: pd.DataFrame) -> di
         "price": price,
         "pct_change": pct,
         "nominal_change": nominal,
-        "volume": float(hist["Volume"].dropna().iloc[-1]) if "Volume" in hist and not hist["Volume"].dropna().empty else np.nan,
+        "volume": coalesce(info.get("last_volume"), fallback_volume),
         "series": close.tail(42).tolist(),
     }
+
+
+def coalesce(*values: float | None) -> float:
+    for value in values:
+        if value is not None and not pd.isna(value):
+            return float(value)
+    return np.nan
+
+
+def fallback_previous_close(close: pd.Series) -> float:
+    if len(close) >= 2:
+        return float(close.iloc[-2])
+    if len(close) == 1:
+        return float(close.iloc[0])
+    return np.nan
 
 
 def latest_rsi(hist: pd.DataFrame, window: int = 14) -> float:
